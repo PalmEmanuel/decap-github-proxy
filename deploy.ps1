@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [string]$AppName = 'decap-auth-func',
+    [string]$AppName = 'decap-auth-func-cms',
 
     [Parameter(Mandatory)]
     [string]$ResourceGroupName,
@@ -56,7 +56,8 @@ Start-Sleep -Seconds 10
 # Since the function app is linux and a simple zip deployment is not supported, we need to use Azure Storage
 # We upload the zip file to the storage account, which the function app will find based on already set app setting
 $ArchivePath = "$AppName.zip"
-Compress-Archive -Path 'auth-func' -DestinationPath $ArchivePath -Force -ErrorAction Stop
+# Needs to not have a root folder when zipped
+Compress-Archive -Path './auth-func/*' -DestinationPath $ArchivePath -Force -ErrorAction Stop
 $BlobParams = @{
     Context = (Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -Name $StorageName).Context
     Container = $AppName

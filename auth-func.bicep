@@ -43,6 +43,7 @@ param githubClientId string
 param githubClientSecret string
 
 var storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccount.listKeys().keys[0].value}'
+var packageUri = '${storageAccount.properties.primaryEndpoints.blob}${appName}/${appName}.zip'
 
 var envVars = [
   {
@@ -58,12 +59,16 @@ var envVars = [
     value: storageAccountName
   }
   {
+    name: 'AzureWebJobsStorage__blobServiceUri'
+    value: 'https://${storageAccountName}.blob.${environment().suffixes.storage}'
+  }
+  {
     name: 'AzureWebJobsSecretStorageType'
     value: 'keyvault'
   }
   {
     name: 'WEBSITE_RUN_FROM_PACKAGE'
-    value: '${storageAccount.properties.primaryEndpoints.blob}${appName}/${appName}.zip'
+    value: packageUri
   }
   {
     name: 'AzureWebJobsSecretStorageKeyVaultUri'
@@ -82,7 +87,7 @@ var envVars = [
     value: 'readonly'
   }
   {
-    name: 'CALLBACK_TOKEN_URI'
+    name: 'CALLBACK_REDIRECT_URI'
     value: 'https://${functionApp.properties.defaultHostName}/api/callback'
   }
   {
@@ -115,7 +120,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   location: location
   properties: {
     tenantId: subscription().tenantId
-    // enableRbacAuthorization: true
+    enableRbacAuthorization: true
     sku: {
       family: 'A'
       name: 'standard'
@@ -124,43 +129,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       {
         tenantId: subscription().tenantId
         objectId: functionApp.identity.principalId
-        // grant full access to the secrets and keys to create too
-        permissions: {
-          keys: [
-            'get'
-            'list'
-            'create'
-            'delete'
-            'update'
-            'import'
-            'backup'
-            'restore'
-            'recover'
-            'purge'
-          ]
-          secrets: [
-            'get'
-            'list'
-            'set'
-            'delete'
-            'recover'
-            'backup'
-            'restore'
-            'purge'
-          ]
-          certificates: [
-            'get'
-            'list'
-            'create'
-            'delete'
-            'update'
-            'import'
-            'backup'
-            'restore'
-            'recover'
-            'purge'
-          ]
-        }
+        permissions: {}
       }
     ]
   }
@@ -179,10 +148,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: appServicePlanName
   location: location
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
-    size: 'Y1'
-    family: 'Y'
+    name: appServicePlanSKU
   }
   properties: {
     reserved: true
